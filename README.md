@@ -146,3 +146,14 @@ $ docker ps
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
 
+
+## Add another web app
+
+```bash
+git clone https://github.com/mrperkett/st-drug-moa.git
+cd st-drug-moa/
+docker build -t st-drug-moa .
+docker run --detach -p 8502:8502 st-drug-moa
+```
+
+Go to the website to view it at http://<your-azure-ip>:8502/
