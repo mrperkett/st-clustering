@@ -115,6 +115,7 @@ git clone https://github.com/mrperkett/st-clustering.git
 
 # build the docker image
 # will take ~3 mins
+cd st-clustering/
 docker build -t st-clustering .
 
 docker run -p 8501:8501 st-clustering
@@ -157,3 +158,63 @@ docker run --detach -p 8502:8502 st-drug-moa
 ```
 
 Go to the website to view it at http://<your-azure-ip>:8502/
+
+
+## Use NGINX to improve mutiple apps setup
+
+```bash
+sudo apt-get install nginx
+sudo vi /etc/nginx/sites-enabled/default
+# see below for edits
+sudo nginx -s reload
+```
+
+```shell
+$ sudo vi /etc/nginx/sites-available/streamlit_test
+$ sudo ln -s /etc/nginx/sites-available/streamlit_test /etc/nginx/sites-enabled/
+$ sudo nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+$ sudo systemctl restart nginx
+```
+
+Contents of `/etc/nginx/sites-available/streamlit_test`
+
+```
+server {
+    listen 80;
+    server_name <ip_address>;
+
+    location /clustering/ {
+        proxy_pass http://localhost:8501/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        rewrite ^/clustering(/.*)$ $1 break;
+    }
+
+    location /moa/ {
+        proxy_pass http://localhost:8502/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        rewrite ^/moa(/.*)$ $1 break;
+    }
+}
+```
+
+Some of the resources that I referenced when setting this up
+
+- https://gist.github.com/soheilhy/8b94347ff8336d971ad0
+- https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/
+- https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-as-a-reverse-proxy-on-ubuntu-22-04
+
+Other useful commands
+
+- `sudo nginx -s stop`
+- `sudo nginx -s reload`
+- `sudo nginx -s start`
+
+
